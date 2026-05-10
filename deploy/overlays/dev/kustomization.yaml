@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ai-ticket-intake
+resources:
+  - ../../base
+images:
+  - name: IMAGE_PLACEHOLDER
+    newName: image-registry.openshift-image-registry.svc:5000/ai-ticket-intake/ai-ticket-intake
+    newTag: latest
