@@ -1,0 +1,56 @@
+stages:
+  - lint
+  - test
+  - build
+  - deploy
+
+variables:
+  IMAGE_NAME: $CI_REGISTRY_IMAGE/ai-ticket-intake
+  DOCKERFILE_PATH: ./Dockerfile
+
+lint:
+  stage: lint
+  image: node:22-alpine
+  script:
+    - npm ci
+    - npm run lint
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_BRANCH == "main"
+
+test:
+  stage: test
+  image: node:22-alpine
+  script:
+    - npm ci
+    - npm run test:suggestions
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_COMMIT_BRANCH == "main"
+
+build:
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:latest
+    entrypoint: [""]
+  script:
+    - >-
+      /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/$DOCKERFILE_PATH
+      --destination $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+      --destination $IMAGE_NAME:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+deploy-dev:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  script:
+    - cd deploy/overlays/dev
+    - kustomize edit set image IMAGE_PLACEHOLDER=$IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - kubectl apply -k .
+  environment:
+    name: dev
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"

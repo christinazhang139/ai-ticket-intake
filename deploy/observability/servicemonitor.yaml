@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ai-ticket-intake
+  namespace: ai-ticket-intake
+  labels:
+    app: ai-ticket-intake
+spec:
+  selector:
+    matchLabels:
+      app: ai-ticket-intake
+  endpoints:
+    - port: http
+      path: /api/metrics
+      interval: 30s

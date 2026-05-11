@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ai-ticket-intake
+  namespace: openshift-gitops
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/christinazhang139/ai-ticket-intake.git
+    targetRevision: main
+    path: deploy/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ai-ticket-intake
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,33 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ai-ticket-intake-alerts
+  namespace: ai-ticket-intake
+spec:
+  groups:
+    - name: ai-ticket-intake
+      rules:
+        - alert: HighErrorRate
+          expr: rate(http_errors_total{app="ai-ticket-intake"}[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Error rate too high"
+            description: "Error rate exceeded 5% in the last 5 minutes"
+        - alert: PodRestarting
+          expr: rate(kube_pod_container_status_restarts_total{namespace="ai-ticket-intake"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod restarting"
+            description: "A pod restarted in the last 15 minutes"
+        - alert: HighMemoryUsage
+          expr: container_memory_working_set_bytes{namespace="ai-ticket-intake",container="app"} / container_spec_memory_limit_bytes > 0.85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory usage"
+            description: "Memory usage exceeded 85% of limit"

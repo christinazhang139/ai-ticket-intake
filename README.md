@@ -138,3 +138,97 @@ scripts/
 - **Chrome or Edge** recommended (Web Speech API for speech-to-text)
 - Microphone access required for voice features
 - Internet required for Chrome's speech recognition (sends audio to Google's servers)
+
+---
+
+## DevOps & Cloud-Native Deployment
+
+This application is deployed on **OpenShift 4.21 (AWS, eu-west-2)** with a full DevOps stack.
+
+### Architecture Overview
+
+```mermaid
+flowchart TB
+  subgraph user_layer ["User Layer"]
+    Developer[Developer]
+    EndUser[End User]
+  end
+
+  subgraph source_layer ["Source Control"]
+    GitHub["GitHub Repository"]
+  end
+
+  subgraph platform ["OpenShift 4.21 on AWS (3 AZ)"]
+    subgraph cicd ["CI/CD"]
+      Tekton["Tekton Pipeline"]
+      ArgoCD["ArgoCD GitOps"]
+      Registry["Internal Registry"]
+    end
+
+    subgraph app ["Application"]
+      Route["Route (HTTPS)"]
+      Service["Service"]
+      Pods["2-6 Pods across 3 AZ"]
+    end
+
+    subgraph obs ["Observability"]
+      Prometheus["Prometheus"]
+      Loki["Loki"]
+      Grafana["Grafana"]
+    end
+  end
+
+  Developer -->|"git push"| GitHub
+  GitHub -->|"trigger"| Tekton
+  Tekton -->|"build + push"| Registry
+  GitHub -->|"poll"| ArgoCD
+  ArgoCD -->|"sync"| Pods
+  EndUser -->|"HTTPS"| Route --> Service --> Pods
+  Prometheus -->|"scrape metrics"| Pods
+  Pods -->|"stdout logs"| Loki
+  Prometheus --> Grafana
+  Loki --> Grafana
+```
+
+### DevOps Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| CI | Tekton (OpenShift Pipelines) | Automated build pipeline: clone → build → push image |
+| CD | ArgoCD (OpenShift GitOps) | GitOps deployment: Git as single source of truth, auto-sync, self-heal |
+| IaC | Kustomize | Base + overlay pattern for dev/prod environment separation |
+| Metrics | Prometheus (User Workload Monitoring) | Application metrics collection + alerting |
+| Logs | Loki + Cluster Logging | Centralized log aggregation to S3 |
+| Dashboard | Grafana | Unified visualization for metrics and logs |
+| Registry | OpenShift Internal Registry | S3-backed container image storage |
+
+### High Availability
+
+- **3 AZ deployment**: Pods spread across eu-west-2a/2b/2c via topologySpreadConstraints
+- **HPA**: Auto-scale 2-6 replicas based on CPU utilization (target: 70%)
+- **PDB**: minAvailable: 1 during node maintenance
+- **Health checks**: Liveness + Readiness probes on `/api/health`
+
+### Project Structure
+
+```
+├── src/                          # Application source (Next.js 16)
+├── Dockerfile                    # Multi-stage build (Node 22 Alpine)
+├── deploy/
+│   ├── base/                     # Kustomize base manifests
+│   ├── overlays/dev/             # Dev environment config
+│   ├── overlays/prod/            # Prod environment config
+│   ├── argocd/                   # ArgoCD Application definition
+│   └── observability/            # ServiceMonitor, PrometheusRule, Grafana
+├── ci/
+│   ├── tekton/pipeline.yaml      # Tekton CI pipeline
+│   └── .gitlab-ci.yml            # Equivalent GitLab CI (reference)
+└── docs/
+    ├── architecture.md           # Detailed architecture design with diagrams
+    └── runbook.md                # Operations runbook
+```
+
+### Documentation
+
+- **[Architecture Design](docs/architecture.md)** — Detailed architecture diagrams (CI/CD, monitoring, logging, cluster nodes), technology decisions, HA design
+- **[Operations Runbook](docs/runbook.md)** — Troubleshooting guide for common issues, alert handling, rollback procedures
