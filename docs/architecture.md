@@ -207,17 +207,17 @@ flowchart TB
 flowchart TB
   subgraph az_a ["Availability Zone: eu-west-2a"]
     M1["Master (m5.2xlarge)<br/>etcd | api-server | controller-manager"]
-    W1["Worker (m5.2xlarge)<br/>── App Pod (ai-ticket-intake) ──<br/>── Log Collector ──<br/>── Loki Gateway + Querier ──"]
+    W1["Worker (m5.2xlarge)<br/>App Pod (ai-ticket-intake)<br/>Log Collector<br/>Loki Gateway + Querier"]
   end
 
   subgraph az_b ["Availability Zone: eu-west-2b"]
     M2["Master (m5.2xlarge)<br/>etcd | api-server | controller-manager"]
-    W2["Worker (m5.2xlarge)<br/>── Grafana ──<br/>── Log Collector ──<br/>── Loki Distributor + Compactor ──<br/>── Loki Operator ──"]
+    W2["Worker (m5.2xlarge)<br/>Grafana<br/>Log Collector<br/>Loki Distributor + Compactor<br/>Loki Operator"]
   end
 
   subgraph az_c ["Availability Zone: eu-west-2c"]
     M3["Master (m5.2xlarge)<br/>etcd | api-server | controller-manager"]
-    W3["Worker (m5.2xlarge)<br/>── App Pod (ai-ticket-intake) ──<br/>── Log Collector ──<br/>── Loki Gateway + Ingester ──<br/>── Loki Query Frontend ──"]
+    W3["Worker (m5.2xlarge)<br/>App Pod (ai-ticket-intake)<br/>Log Collector<br/>Loki Gateway + Ingester<br/>Loki Query Frontend"]
   end
 
   M1 <-->|"etcd replication"| M2
